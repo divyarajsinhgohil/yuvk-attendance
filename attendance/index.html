@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance System</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/dist/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-users"></i>
+                    <h1>Attendance System</h1>
+                </div>
+                <button onclick="exportMonthlyPDF()" class="btn-warning">
+                    <i class="fas fa-calendar-alt"></i> Monthly Report
+                </button>
+                <button onclick="printReport()" class="btn-secondary">
+                    <i class="fas fa-print"></i> Print Report
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Left Panel - Date & Controls -->
+            <div class="left-panel">
+                <!-- Date Card -->
+                <div class="card date-card">
+                    <h2><i class="fas fa-calendar-day"></i> Today</h2>
+                    <div class="date-display-container">
+                        <div class="current-date" id="currentDate"></div>
+                        <span class="date-indicator">
+                            <i class="fas fa-calendar-check"></i> Auto Today
+                        </span>
+                    </div>
+                    
+                    <div class="date-navigation">
+                        <button onclick="previousDay()" class="btn-icon-large">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <input type="date" id="datePicker" onchange="changeDate(this.value)" class="date-input">
+                        <button onclick="nextDay()" class="btn-icon-large">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="quick-stats">
+                        <div class="stat-item today-stat">
+                            <span class="stat-label">Today's Attendance</span>
+                            <span class="stat-value" id="todayAttendance">0%</span>
+                        </div>
+                        <div class="stat-item total-stat">
+                            <span class="stat-label">Total YUVKs</span>
+                            <span class="stat-value" id="totalYuvks">0</span>
+                        </div>
+                        <div class="stat-item present-stat">
+                            <span class="stat-label">Present Today</span>
+                            <span class="stat-value" id="presentToday">0</span>
+                        </div>
+                        <div class="stat-item absent-stat">
+                            <span class="stat-label">Absent Today</span>
+                            <span class="stat-value" id="absentToday">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Attendance SystemCard -->
+                <div class="card actions-card">
+                    <h2><i class="fas fa-user-plus"></i> Add New YUVK</h2>
+                    <div class="form-group">
+                        <input type="text" id="yuvkName" placeholder="Attendance SystemName *" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="yuvkMobile" placeholder="Mobile Number (Optional)">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="yuvkShakha" placeholder="Shakha/Village (Optional)">
+                    </div>
+                    <button onclick="addYuvk()" class="btn-primary full-width">
+                        <i class="fas fa-plus"></i> Add YUVK
+                    </button>
+                </div>
+
+                <!-- Data Management Card -->
+                <div class="card import-export-card">
+                    <h2><i class="fas fa-database"></i> Data Management</h2>
+                    <div class="button-group-vertical">
+                        <button onclick="exportData('json')" class="btn-export">
+                            <i class="fas fa-file-export"></i> Export JSON
+                        </button>
+                        <button onclick="exportData('csv')" class="btn-export">
+                            <i class="fas fa-file-csv"></i> Export CSV
+                        </button>
+                        <button onclick="exportPDF()" class="btn-export">
+                            <i class="fas fa-file-pdf"></i> Export PDF
+                        </button>
+                        <button onclick="exportDailyPDF()" class="btn-export">
+                            <i class="fas fa-file-pdf"></i> Export Daily PDF
+                        </button>
+                        <button onclick="importData()" class="btn-import">
+                            <i class="fas fa-file-import"></i> Import Data
+                        </button>
+                        <button onclick="importPDFData()" class="btn-import-pdf">
+                            <i class="fas fa-file-pdf"></i> Import from PDF
+                        </button>
+                        <button onclick="clearAllData()" class="btn-danger">
+                            <i class="fas fa-trash-alt"></i> Clear All Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Panel - Big Attendance Section -->
+            <div class="main-panel">
+                <div class="attendance-header">
+                    <h2><i class="fas fa-clipboard-check"></i> Today's Attendance</h2>
+                    <div class="attendance-controls">
+                        <button onclick="markAllPresent()" class="btn-success">
+                            <i class="fas fa-check-circle"></i> Mark All Present
+                        </button>
+                        <button onclick="markAllAbsent()" class="btn-danger">
+                            <i class="fas fa-times-circle"></i> Mark All Absent
+                        </button>
+                        <button onclick="saveAttendance()" class="btn-primary">
+                            <i class="fas fa-save"></i> Save Attendance
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Box -->
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchYuvk" placeholder="Search YUVKs by name, mobile, or shakha..." 
+                               onkeyup="filterYuvks()">
+                        <span id="yuvkCount">0 YUVKs</span>
+                    </div>
+                </div>
+
+                <!-- Big Attendance Grid -->
+                <div class="attendance-grid" id="attendanceGrid">
+                    <!-- YUVKs will be loaded here dynamically -->
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-content">
+                        <i class="fas fa-users fa-4x"></i>
+                        <h3>No YUVKs Added Yet</h3>
+                        <p>Add YUVKs using the form on the left side</p>
+                        <button onclick="document.getElementById('yuvkName').focus()" class="btn-primary">
+                            <i class="fas fa-user-plus"></i> Add Your First YUVK
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Charts & Reports -->
+            <div class="right-panel">
+                <!-- Weekly Trend Chart -->
+                <div class="card">
+                    <h2><i class="fas fa-chart-line"></i> Weekly Trend</h2>
+                    <div class="chart-container">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Monthly Overview Chart -->
+                <div class="card">
+                    <h2><i class="fas fa-chart-bar"></i> Monthly Overview</h2>
+                    <div class="chart-container">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top Performers Chart -->
+                <div class="card">
+                    <h2><i class="fas fa-trophy"></i> Top Performers</h2>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>© 2024 Attendance System | All data stored locally in your browser</p>
+            <p class="storage-info">Storage used: <span id="storageUsed">0 KB</span></p>
+        </footer>
+    </div>
+
+    <!-- Import File Input (Hidden) -->
+    <input type="file" id="importFile" accept=".json,.csv,.pdf" hidden>
+
+    <!-- Scripts -->
+    <script src="storageManager.js"></script>
+    <script src="pdfGenerator.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
